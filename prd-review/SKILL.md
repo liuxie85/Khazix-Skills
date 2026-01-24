@@ -30,7 +30,9 @@ description: A comprehensive PRD audit skill that acts as a "PRD Audit Committee
 ## 2. 评分模型 (The Scoring Model)
 
 ### 2.1 核心算法
-$$最终得分 = (逻辑分 \times 70\%) + (结构分 \times 30\%)$$
+```
+最终得分 = (逻辑分 × 70%) + (结构分 × 30%)
+```
 
 ### 2.2 评级矩阵
 | 等级 | 分数段 | 结论 | 定义与后续行动 |
@@ -142,7 +144,9 @@ Q3. 过度设计检查：
 | **版本记录** | **+5** | 有清晰变更日志 | 原文引用 |
 | **UI/UE 引用** | **+5** | 含设计稿链接或图片 | `structure.has_images` |
 
-$$结构分 = \min(必备项得分 + 加分项得分, 100)$$
+```
+结构分 = min(必备项得分 + 加分项得分, 100)
+```
 
 ---
 
