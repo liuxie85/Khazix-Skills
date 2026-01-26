@@ -83,8 +83,26 @@ def analyze_prd(file_path):
     stats["structure"]["section_balance"] = dict(sorted_sections)
 
     # Analyze Visuals
+    # 1. Mermaid/Flow code blocks
     if '```mermaid' in content or '```flow' in content:
         stats["structure"]["has_flowcharts"] = True
+    
+    # 2. Text-based flow descriptions (if no diagram found)
+    if not stats["structure"]["has_flowcharts"]:
+        # Chinese flow keywords: 首先/然后/接着/最后/步骤
+        chinese_flow = re.search(r'(首先|第一步|步骤\s*[1一])[^。]*[。\n].*(然后|接着|其次|第二步|步骤\s*[2二])', content, re.DOTALL)
+        # Numbered steps: 1. xxx 2. xxx or Step 1: xxx
+        numbered_steps = len(re.findall(r'(?:^|\n)\s*(?:\d+[\.\)、]|Step\s*\d+[:\.])\s*\S', content)) >= 3
+        # Arrow-based flow: A -> B -> C or A → B → C
+        arrow_flow = len(re.findall(r'[^-]->|→', content)) >= 2
+        
+        if chinese_flow or numbered_steps or arrow_flow:
+            stats["structure"]["has_flowcharts"] = True
+            stats["structure"]["flowchart_type"] = "text_description"
+        else:
+            stats["structure"]["flowchart_type"] = "none"
+    else:
+        stats["structure"]["flowchart_type"] = "diagram"
     
     if re.search(r'!\[.*?\]\(.*?\)', content) or re.search(r'<img\s+', content):
         stats["structure"]["has_images"] = True
@@ -151,7 +169,9 @@ def analyze_prd(file_path):
     if stats["buzzwords"]["score"] > 50:
         warnings.append("WARN: Buzzword score > 50, document may be too vague")
     if not stats["structure"]["has_flowcharts"]:
-        warnings.append("WARN: No flowchart detected (Mermaid/flow block)")
+        warnings.append("WARN: No flowchart detected (no Mermaid/diagram or text flow description)")
+    elif stats["structure"].get("flowchart_type") == "text_description":
+        warnings.append("INFO: Flow description detected as text (consider adding Mermaid diagram)")
     if total == 0:
         warnings.append("WARN: No priority markers (P0/P1/P2) found")
     
