@@ -3,10 +3,20 @@ import sys
 import json
 import re
 
-def stitch_skill(skill_dir):
+# Add script directory to path to import utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils import resolve_skill_path
+
+def stitch_skill(skill_identifier):
     """
     Reads evolution.json and stitches it into SKILL.md under a dedicated section.
     """
+    skill_dir, err = resolve_skill_path(skill_identifier)
+    if err:
+        print(f"Error: {err}", file=sys.stderr)
+        return False
+
+    print(f"Target Skill Directory: {skill_dir}")
     skill_md_path = os.path.join(skill_dir, "SKILL.md")
     evolution_json_path = os.path.join(skill_dir, "evolution.json")
 

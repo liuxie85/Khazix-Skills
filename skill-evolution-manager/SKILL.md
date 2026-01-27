@@ -1,6 +1,9 @@
 ---
-name: Skill Evolution Manager
+name: skill-evolution-manager
 description: 专门用于在对话结束时，根据用户反馈和对话内容总结优化并迭代现有 Skills 的核心工具。它通过吸取对话中的“精华”（如成功的解决方案、失败的教训、特定的代码规范）来持续演进 Skills 库。
+github_url: https://github.com/KKKKhazix/Khazix-Skills/tree/main/skill-evolution-manager
+github_hash: fe15fea6cf7ac216027d11c2c64e87b462cc0427
+version: 0.1.0
 license: MIT
 ---
 
@@ -39,11 +42,12 @@ license: MIT
 
 ### 2. 经验持久化 (Persist)
 Agent 调用 `scripts/merge_evolution.py`，将上述 JSON 增量写入目标 Skill 的 `evolution.json` 文件中。
-- **命令**: `python scripts/merge_evolution.py <skill_path> <json_string>`
+- **命令**: `python scripts/merge_evolution.py <skill_name_or_path> <json_string>`
+- **参数支持**: 支持传入 Skill 名称（如 `yt-dlp`）或绝对路径。
 
 ### 3. 文档缝合 (Stitch)
 Agent 调用 `scripts/smart_stitch.py`，将 `evolution.json` 的内容转化为 Markdown 并追加到 `SKILL.md` 末尾。
-- **命令**: `python scripts/smart_stitch.py <skill_path>`
+- **命令**: `python scripts/smart_stitch.py <skill_name_or_path>`
 
 ### 4. 跨版本对齐 (Align)
 当 `skill-manager` 更新了某个 Skill 后，Agent 应主动运行 `smart_stitch.py`，将之前保存的经验“重新缝合”到新版文档中。

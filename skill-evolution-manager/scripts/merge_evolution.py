@@ -3,11 +3,21 @@ import sys
 import json
 import datetime
 
-def merge_evolution(skill_dir, new_data_json_str):
+# Add script directory to path to import utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils import resolve_skill_path
+
+def merge_evolution(skill_identifier, new_data_json_str):
     """
     Merges new evolution data into existing evolution.json.
     Deduplicates list items.
     """
+    skill_dir, err = resolve_skill_path(skill_identifier)
+    if err:
+        print(f"Error: {err}", file=sys.stderr)
+        return False
+        
+    print(f"Target Skill Directory: {skill_dir}")
     evolution_json_path = os.path.join(skill_dir, "evolution.json")
     
     # Load existing or create new
