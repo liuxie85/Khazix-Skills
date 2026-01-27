@@ -14,7 +14,8 @@ This skill helps you maintain your library of GitHub-wrapped skills by automatin
 2.  **Check**: Queries GitHub (via `git ls-remote`) to compare local commit hashes against the latest remote HEAD.
 3.  **Report**: Generates a status report identifying which skills are "Stale" or "Current".
 4.  **Update Workflow**: Provides a structured process for the Agent to upgrade a skill.
-5.  **Inventory Management**: Lists all local skills and provides deletion capabilities.
+5.  **Interactive Merge**: Smart merge workflow for preserving local modifications (Rebase-like).
+6.  **Inventory Management**: Lists all local skills and provides deletion capabilities.
 
 ## Usage
 
@@ -28,7 +29,7 @@ This skill helps you maintain your library of GitHub-wrapped skills by automatin
 2.  **Review Report**: The script outputs a JSON summary. The Agent presents this to the user.
     *   Example: "Found 3 outdated skills: `yt-dlp` (behind 50 commits), `ffmpeg-tool` (behind 2 commits)..."
 
-### Workflow 2: Update a Skill
+### Workflow 2: Update a Skill (Standard)
 
 **Trigger**: "Update [Skill Name]" (after a check)
 
@@ -39,8 +40,31 @@ This skill helps you maintain your library of GitHub-wrapped skills by automatin
 3.  **Refactor**:
     *   The agent rewrites `SKILL.md` to reflect the new capabilities.
     *   The agent updates the `github_hash` in the frontmatter.
-    *   The agent (optionally) attempts to update the `wrapper.py` if CLI args have changed.
 4.  **Verify**: Runs a quick validation (if available).
+
+### Workflow 3: Interactive Merge (Rebase)
+
+**Trigger**: "Smart update [Skill Name]" or "Merge updates for [Skill Name]"
+
+Use this workflow when you have **local modifications** (custom prompts, modified scripts) that must be preserved.
+
+1.  **Analyze Diff**:
+    - Fetch remote file content (README/Script).
+    - Compare with local version.
+    - Summarize changes to User (e.g., "Remote added Feature X, but you have local Logic Y").
+
+2.  **Code/Docs Fusion**:
+    - **For SKILL.md**: Use `edit` tool to inject new features while strictly preserving local custom prompts.
+    - **For Scripts**: 
+        1. Download remote script to a temp file.
+        2. Read both local and remote scripts.
+        3. **Complexity Check**: 
+           - IF simple: Synthesize a new script merging remote fixes AND local logic.
+           - IF complex: **Rename Strategy**. Save remote script as `script_name_v2.py` (Side-by-side) and let user choose, to avoid breaking logic.
+
+3.  **Finalize**:
+    - Update `github_hash` in frontmatter.
+    - Cleanup temp files.
 
 ## Scripts
 
