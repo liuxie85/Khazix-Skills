@@ -1,56 +1,76 @@
 ---
 name: github-to-skills
-description: Automated factory for converting GitHub repositories into specialized AI skills. Use this skill when the user provides a GitHub URL and wants to "package", "wrap", or "create a skill" from it. It automatically fetches repository details, latest commit hashes, and generates a standardized skill structure with enhanced metadata suitable for lifecycle management.
-license: MIT
+description: 将 GitHub 仓库一键转换为 OpenCode Skill。当用户提供 GitHub URL 并希望"打包"、"包装"或"创建 skill"时使用。支持仓库根目录和子目录路径，自动获取 commit hash 用于版本管理。
 ---
 
 # GitHub to Skills Factory
 
-This skill automates the conversion of GitHub repositories into fully functional AI skills.
+将 GitHub 仓库转换为标准化的 OpenCode Skill。
 
-## Core Functionality
+## 触发方式
 
-1. **Analysis**: Fetches repository metadata (Description, README, Latest Commit Hash).
-2. **Scaffolding**: Creates a standardized skill directory structure.
-3. **Metadata Injection**: Generates `SKILL.md` with extended frontmatter (tracking source, version, hash) for future automated management.
-4. **Wrapper Generation**: Creates a `scripts/wrapper.py` (or similar) to interface with the tool.
+- `/github-to-skills <url>`
+- "把这个仓库打包成 skill: <url>"
+- "Package this repo into a skill: <url>"
 
-## Usage
+## 快速使用
 
-**Trigger**: `/GitHub-to-skills <github_url>` or "Package this repo into a skill: <url>"
+```bash
+python scripts/github_to_skill.py <github_url> [output_dir]
+```
 
-### Required Metadata Schema
+**示例**:
+```bash
+# 使用默认输出路径 ~/.config/opencode/skills
+python scripts/github_to_skill.py https://github.com/user/repo
 
-Every skill created by this factory MUST include the following extended YAML frontmatter in its `SKILL.md`. This is critical for the `skill-manager` to function later.
+# 指定输出目录
+python scripts/github_to_skill.py https://github.com/user/repo ./my-skills
+
+# 子目录支持
+python scripts/github_to_skill.py https://github.com/user/repo/tree/main/subdir
+```
+
+## 工作流程
+
+1. **解析 URL** - 支持标准仓库 URL 和 `/tree/branch/subdir` 格式
+2. **获取元数据** - 自动获取 commit hash、README/SKILL.md 内容
+3. **生成 Skill** - 创建标准目录结构和 SKILL.md
+4. **输出结果** - 返回 JSON 格式便于后续处理
+
+## 生成的 Skill 结构
+
+```
+<skill-name>/
+├── SKILL.md          # 包含扩展元数据
+├── scripts/
+│   └── wrapper.py    # 占位脚本
+└── references/
+```
+
+## 必需的元数据格式
+
+生成的 SKILL.md 包含以下扩展字段（用于 skill-manager 版本管理）：
 
 ```yaml
 ---
-name: <kebab-case-repo-name>
-description: <concise-description-for-agent-triggering>
-# EXTENDED METADATA (MANDATORY)
-github_url: <original-repo-url>
-github_hash: <latest-commit-hash-at-time-of-creation>
-version: <tag-or-0.1.0>
-created_at: <ISO-8601-date>
-entry_point: scripts/wrapper.py # or main script
-dependencies: # List main dependencies if known, e.g., ["yt-dlp", "ffmpeg"]
+name: <kebab-case-name>
+description: <描述>
+github_url: <源仓库 URL>
+github_hash: <commit hash>
+version: 0.1.0
+created_at: <ISO-8601 日期>
 ---
 ```
 
-## Workflow
+## 脚本
 
-1. **Fetch Info**: The agent first runs `scripts/fetch_github_info.py` to get the raw data from the repo.
-2. **Plan**: The agent analyzes the README to understand how to invoke the tool (CLI args, Python API, etc.).
-3. **Generate**: The agent uses the `skill-creator` patterns to write the `SKILL.md` and wrapper scripts, ensuring the **extended metadata** is present.
-4. **Verify**: Checks if the commit hash was correctly captured.
+| 脚本 | 用途 |
+|:---|:---|
+| `scripts/github_to_skill.py` | 主脚本，一键完成全部流程 |
 
-## Resources
+## 最佳实践
 
-- `scripts/fetch_github_info.py`: Utility to scrape/API fetch repo details (README, Hash, Tags).
-- `scripts/create_github_skill.py`: Orchestrator to scaffold the folder and write the initial files.
-
-## Best Practices for Generated Skills
-
-- **Isolation**: The generated skill should install its own dependencies (e.g., in a venv or via `uv`/`pip`) if possible, or clearly state them.
-- **Progressive Disclosure**: Do not dump the entire repo into the skill. Only include the necessary wrapper code and reference the original repo for deep dives.
-- **Idempotency**: The `github_hash` field allows the future `skill-manager` to check `if remote_hash != local_hash` to trigger updates.
+- **渐进披露**: 只包含必要的 wrapper 代码，详细文档引用原仓库
+- **版本追踪**: `github_hash` 字段用于 skill-manager 检测更新
+- **依赖隔离**: 生成的 skill 应声明自己的依赖
