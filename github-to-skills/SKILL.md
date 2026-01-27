@@ -34,8 +34,10 @@ python scripts/github_to_skill.py https://github.com/user/repo/tree/main/subdir
 ## 工作流程
 
 1. **解析 URL** - 支持标准仓库 URL 和 `/tree/branch/subdir` 格式
-2. **获取元数据** - 自动获取 commit hash、README/SKILL.md 内容
-3. **生成 Skill** - 创建标准目录结构和 SKILL.md
+2. **获取元数据** - 自动获取 commit hash
+3. **智能生成**:
+   - **策略 A**: 如果远程已存在 `SKILL.md`，直接下载并保留原有 Prompt，仅更新元数据（Hash/URL）。
+   - **策略 B**: 如果远程无 `SKILL.md`，则基于 README 自动生成新的 `SKILL.md`。
 4. **输出结果** - 返回 JSON 格式便于后续处理
 
 ## 生成的 Skill 结构

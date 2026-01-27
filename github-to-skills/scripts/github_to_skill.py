@@ -18,6 +18,7 @@ import datetime
 import subprocess
 import urllib.request
 import re
+import yaml
 
 # 默认输出路径
 DEFAULT_OUTPUT_DIR = os.path.expanduser("~/.config/opencode/skills")
@@ -49,7 +50,7 @@ def parse_github_url(url):
 
 def get_repo_info(url):
     """
-    获取仓库信息：名称、描述、最新 commit hash、README 内容
+    获取仓库信息：名称、描述、最新 commit hash、README 内容、以及 SKILL.md (如果存在)
     """
     repo_url, subdir, branch = parse_github_url(url)
     
@@ -81,24 +82,34 @@ def get_repo_info(url):
     if latest_hash == "unknown":
         print(f"Warning: 无法获取 git hash", file=sys.stderr)
     
-    # 2. 获取 README
-    readme_content = ""
     raw_base = repo_url.replace("github.com", "raw.githubusercontent.com")
     
-    # 构建 README 路径
-    readme_paths = [
-        f"{raw_base}/{branch}/{subdir}/SKILL.md" if subdir else f"{raw_base}/{branch}/SKILL.md",
-        f"{raw_base}/{branch}/{subdir}/README.md" if subdir else f"{raw_base}/{branch}/README.md",
-        f"{raw_base}/{branch}/{subdir}/readme.md" if subdir else f"{raw_base}/{branch}/readme.md",
-    ]
+    # 2. 尝试获取 SKILL.md
+    skill_md_content = None
+    skill_md_url = f"{raw_base}/{branch}/{subdir}/SKILL.md" if subdir else f"{raw_base}/{branch}/SKILL.md"
+    try:
+        with urllib.request.urlopen(skill_md_url, timeout=5) as response:
+            skill_md_content = response.read().decode('utf-8')
+            print("Found existing SKILL.md in remote repository.")
+    except Exception:
+        pass
     
-    for readme_url in readme_paths:
-        try:
-            with urllib.request.urlopen(readme_url, timeout=10) as response:
-                readme_content = response.read().decode('utf-8')
-                break
-        except Exception:
-            continue
+    # 3. 获取 README
+    readme_content = ""
+    if not skill_md_content: # 如果有 SKILL.md，README 优先级降低，但还是获取一下
+        # 构建 README 路径
+        readme_paths = [
+            f"{raw_base}/{branch}/{subdir}/README.md" if subdir else f"{raw_base}/{branch}/README.md",
+            f"{raw_base}/{branch}/{subdir}/readme.md" if subdir else f"{raw_base}/{branch}/readme.md",
+        ]
+        
+        for readme_url in readme_paths:
+            try:
+                with urllib.request.urlopen(readme_url, timeout=10) as response:
+                    readme_content = response.read().decode('utf-8')
+                    break
+            except Exception:
+                continue
     
     return {
         "name": repo_name,
@@ -107,8 +118,32 @@ def get_repo_info(url):
         "subdir": subdir,
         "branch": branch,
         "latest_hash": latest_hash,
-        "readme": readme_content[:10000]  # 截断防止过长
+        "readme": readme_content, # 不再截断
+        "skill_md": skill_md_content
     }
+
+
+def update_frontmatter(content, new_metadata):
+    """
+    更新 SKILL.md 的 frontmatter，保留原有内容，注入新元数据。
+    """
+    parts = content.split('---', 2)
+    if len(parts) < 3:
+        # 格式不对，直接在头部插入
+        new_yaml = yaml.dump(new_metadata, default_flow_style=False)
+        return f"---\n{new_yaml}---\n\n{content}"
+    
+    try:
+        # 解析原有 frontmatter
+        existing_fm = yaml.safe_load(parts[1]) or {}
+        # 合并 (新元数据优先)
+        existing_fm.update(new_metadata)
+        
+        new_yaml = yaml.dump(existing_fm, default_flow_style=False, allow_unicode=True)
+        return f"---\n{new_yaml}---{parts[2]}"
+    except Exception:
+        # 解析失败，回退到原有逻辑
+        return content
 
 
 def create_skill(repo_info, output_dir):
@@ -119,38 +154,52 @@ def create_skill(repo_info, output_dir):
     safe_name = "".join(c if c.isalnum() or c in ('-', '_') else '-' for c in repo_info['name']).lower()
     skill_path = os.path.join(output_dir, safe_name)
     
-    # 检查是否已存在
     if os.path.exists(skill_path):
         print(f"Warning: {skill_path} 已存在，将覆盖 SKILL.md")
     
-    # 创建目录结构
     os.makedirs(os.path.join(skill_path, "scripts"), exist_ok=True)
-    os.makedirs(os.path.join(skill_path, "references"), exist_ok=True)
+    # 仅在必要时创建 references
+    # os.makedirs(os.path.join(skill_path, "references"), exist_ok=True) 
     
-    # 生成 SKILL.md
     created_at = datetime.datetime.now().isoformat()
     
-    # 从 README 提取描述（第一段非标题文本）
-    readme_lines = repo_info['readme'].split('\n')
-    description = f"Skill wrapper for {repo_info['name']}."
-    for line in readme_lines:
-        line = line.strip()
-        if line and not line.startswith('#') and not line.startswith('---'):
-            description = line[:200]
-            break
-    
-    skill_md = f"""---
-name: {safe_name}
-description: {description}
-github_url: {repo_info['url']}
-github_hash: {repo_info['latest_hash']}
-version: 0.1.0
-created_at: {created_at}
----
+    # 准备元数据
+    metadata = {
+        "name": safe_name,
+        "github_url": repo_info['url'],
+        "github_hash": repo_info['latest_hash'],
+        "version": "0.1.0",
+        "created_at": created_at
+    }
+
+    if repo_info.get('skill_md'):
+        # 策略 A: 远程已有 SKILL.md -> 智能合并
+        print("Using remote SKILL.md as base...")
+        final_skill_md = update_frontmatter(repo_info['skill_md'], metadata)
+        
+    else:
+        # 策略 B: 远程无 SKILL.md -> 基于 README 生成
+        print("Generating SKILL.md from README...")
+        
+        readme_lines = repo_info['readme'].split('\n')
+        description = f"Skill wrapper for {repo_info['name']}."
+        for line in readme_lines:
+            line = line.strip()
+            if line and not line.startswith('#') and not line.startswith('---'):
+                description = line[:200]
+                break
+        
+        metadata['description'] = description
+        
+        # 构建 frontmatter
+        fm_str = yaml.dump(metadata, default_flow_style=False, allow_unicode=True)
+        
+        final_skill_md = f"""---
+{fm_str}---
 
 # {repo_info['name']}
 
-{repo_info['readme'][:3000]}
+{repo_info['readme']}
 
 ## Usage
 
@@ -165,9 +214,9 @@ created_at: {created_at}
     
     skill_md_path = os.path.join(skill_path, "SKILL.md")
     with open(skill_md_path, "w", encoding="utf-8") as f:
-        f.write(skill_md)
+        f.write(final_skill_md)
     
-    # 创建占位 wrapper 脚本
+    # 创建占位 wrapper 脚本 (如果远程没有 scripts 目录结构，或者我们还没 sync)
     wrapper_path = os.path.join(skill_path, "scripts", "wrapper.py")
     if not os.path.exists(wrapper_path):
         wrapper_content = f'''#!/usr/bin/env python3
