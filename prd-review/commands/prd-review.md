@@ -24,9 +24,10 @@ description: PRD 质量审计 - 支持全面/逻辑/结构分析
 - 否则模式为 `full`（全面审计），文件路径为 `$1`
 
 然后执行：
-1. 运行 `python3 ~/.config/opencode/skills/prd-review/scripts/analyze_prd_meta.py <文件路径>` 收集元数据
-2. 读取 `~/.config/opencode/skills/prd-review/SKILL.md` 获取评审标准
-3. 根据模式执行相应审计：
+1. 定位 `prd-review` skill 的安装目录（通常在 `~/.config/opencode/skills` 或 `~/.codefuse/skills` 下）。
+2. 运行 `python3 <skill_dir>/scripts/analyze_prd_meta.py <文件路径>` 收集元数据
+3. 读取 `<skill_dir>/SKILL.md` 获取评审标准
+4. 根据模式执行相应审计：
 
 ---
 

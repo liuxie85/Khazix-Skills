@@ -16,8 +16,9 @@ description: A comprehensive PRD audit skill that acts as a "PRD Audit Committee
 **在进行任何定性分析之前，你必须先运行 `scripts/analyze_prd_meta.py` 脚本来收集客观数据。**
 
 **执行步骤：**
-1.  运行 `python3 scripts/analyze_prd_meta.py <prd_file_path>`。
-2.  获取脚本输出的 JSON 数据（包含字数、P0/P1 数量、流程图检测结果、Buzzwords 统计）。
+1.  定位本 Skill 的安装目录 `<skill_dir>`。
+2.  运行 `python3 <skill_dir>/scripts/analyze_prd_meta.py <prd_file_path>`。
+3.  获取脚本输出的 JSON 数据（包含字数、P0/P1 数量、流程图检测结果、Buzzwords 统计）。
 3.  **强制引用：** 在接下来的审计报告中，你必须直接引用该 JSON 中的数据。
 
 ---
