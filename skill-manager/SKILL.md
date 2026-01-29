@@ -2,7 +2,7 @@
 name: skill-manager
 description: Lifecycle manager for GitHub-based skills. Use this to batch scan your skills directory, check for updates on GitHub, and perform guided upgrades of your skill wrappers.
 license: MIT
-github_url: https://github.com/liuxie85/liuxie-skills/tree/main/skill-manager
+github_url: https://github.com/liuxie85/Khazix-Skills/tree/main/skill-manager
 ---
 
 # Skill Lifecycle Manager
