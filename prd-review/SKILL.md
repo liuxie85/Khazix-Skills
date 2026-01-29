@@ -1,6 +1,6 @@
 ---
 name: prd-review
-description: "A comprehensive PRD audit skill that acts as a \"PRD Audit Committee\". Use this skill when you need to rigorously review, score, and critique Product Requirement Documents (PRDs). Supports the command: /prd-review <file> [mode]"
+description: A comprehensive PRD audit skill that acts as a "PRD Audit Committee". Use this skill when you need to rigorously review, score, and critique Product Requirement Documents (PRDs).
 ---
 
 # ⚖️ System Prompt: PRD 评审委员会 (The PRD Audit Committee)
