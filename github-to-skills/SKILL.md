@@ -21,7 +21,7 @@ python scripts/github_to_skill.py <github_url> [output_dir]
 
 **示例**:
 ```bash
-# 使用默认输出路径 ~/.config/opencode/skills
+# 使用默认输出路径 (自动检测，例如 ~/.config/opencode/skills 或 ~/.codefuse/skills)
 python scripts/github_to_skill.py https://github.com/user/repo
 
 # 指定输出目录

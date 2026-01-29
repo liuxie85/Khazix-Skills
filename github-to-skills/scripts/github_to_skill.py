@@ -20,8 +20,31 @@ import urllib.request
 import re
 import yaml
 
+def get_default_skills_dir():
+    # Priority 1: Environment variable
+    env_path = os.getenv("SKILLS_DIR")
+    if env_path:
+        return os.path.expanduser(env_path)
+    
+    # Priority 2: Check known paths
+    candidates = [
+        "~/.config/opencode/skills",
+        "~/.codefuse/fuse/skills",
+        "~/.codefuse/skills",
+        "~/.config/codefuse/skills",
+        "~/codefuse/skills"
+    ]
+    
+    for path in candidates:
+        expanded = os.path.expanduser(path)
+        if os.path.exists(expanded):
+            return expanded
+            
+    # Default fallback
+    return os.path.expanduser("~/.config/opencode/skills")
+
 # 默认输出路径
-DEFAULT_OUTPUT_DIR = os.path.expanduser("~/.config/opencode/skills")
+DEFAULT_OUTPUT_DIR = get_default_skills_dir()
 
 
 def parse_github_url(url):
