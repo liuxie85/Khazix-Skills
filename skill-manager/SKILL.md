@@ -2,6 +2,7 @@
 name: skill-manager
 description: Lifecycle manager for GitHub-based skills. Use this to batch scan your skills directory, check for updates on GitHub, and perform guided upgrades of your skill wrappers.
 license: MIT
+github_url: https://github.com/liuxie85/liuxie-skills/tree/main/skill-manager
 ---
 
 # Skill Lifecycle Manager
@@ -21,6 +22,7 @@ This skill helps you maintain your library of GitHub-wrapped skills by automatin
 
 **Trigger**: `/skill-manager check` or "Scan my skills for updates"
 **Trigger**: `/skill-manager list` or "List my skills"
+**Trigger**: `/skill-manager update <skill_name>` or "Update skill <skill_name>"
 **Trigger**: `/skill-manager delete <skill_name>` or "Delete skill <skill_name>"
 
 ### Workflow 1: Check for Updates
@@ -33,14 +35,9 @@ This skill helps you maintain your library of GitHub-wrapped skills by automatin
 
 **Trigger**: "Update [Skill Name]" (after a check)
 
-1.  **Fetch New Context**: The agent fetches the *new* README from the remote repo.
-2.  **Diff Analysis**:
-    *   The agent compares the new README with the old `SKILL.md`.
-    *   Identifies new features, deprecated flags, or usage changes.
-3.  **Refactor**:
-    *   The agent rewrites `SKILL.md` to reflect the new capabilities.
-    *   The agent updates the `github_hash` in the frontmatter.
-4.  **Verify**: Runs a quick validation (if available).
+1.  **Check Status**: Checks if the skill is outdated using `scripts/update_skill.py`.
+2.  **Update Files**: Automatically downloads modified files from the remote repository.
+3.  **Result**: Reports success or failure.
 
 ### Workflow 3: Interactive Merge (Rebase)
 

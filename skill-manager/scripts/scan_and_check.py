@@ -14,7 +14,8 @@ import yaml
 import json
 import subprocess
 import concurrent.futures
-import requests
+import urllib.request
+import urllib.error
 import hashlib
 from datetime import datetime
 
@@ -145,25 +146,33 @@ def fetch_repo_tree(owner, repo, branch):
     if token:
         headers['Authorization'] = f'token {token}'
     
-    response = requests.get(api_url, headers=headers, timeout=20)
-    
-    if response.status_code == 200:
-        data = response.json()
-        if 'tree' not in data:
-            return {}
-        
-        # 构建路径 -> sha 映射
-        tree_map = {}
-        for item in data['tree']:
-            if item['type'] == 'blob':
-                tree_map[item['path']] = item['sha']
-        return tree_map
-    elif response.status_code == 404:
-        raise Exception(f"Repository or branch not found: {owner}/{repo}@{branch}")
-    elif response.status_code == 403:
-        raise Exception("GitHub API rate limit exceeded")
-    else:
-        raise Exception(f"GitHub API error: {response.status_code}")
+    try:
+        req = urllib.request.Request(api_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as response:
+            if response.status != 200:
+                 raise Exception(f"GitHub API error: {response.status}")
+            
+            data = json.loads(response.read().decode('utf-8'))
+            
+            if 'tree' not in data:
+                return {}
+            
+            # 构建路径 -> sha 映射
+            tree_map = {}
+            for item in data['tree']:
+                if item['type'] == 'blob':
+                    tree_map[item['path']] = item['sha']
+            return tree_map
+
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+             raise Exception(f"Repository or branch not found: {owner}/{repo}@{branch}")
+        elif e.code == 403:
+             raise Exception("GitHub API rate limit exceeded")
+        else:
+             raise Exception(f"GitHub API error: {e.code}")
+    except Exception as e:
+        raise Exception(f"Network error: {str(e)}")
 
 
 def evaluate_skill_update(skill, tree_data):
