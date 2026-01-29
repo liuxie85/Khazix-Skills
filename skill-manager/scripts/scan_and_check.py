@@ -29,6 +29,7 @@ def get_default_skills_dir():
     # Priority 2: Check known paths
     candidates = [
         "~/.config/opencode/skills",
+        "~/.codefuse/fuse/skills",      # CodeFuse default
         "~/.codefuse/skills",           # Common alias
         "~/.config/codefuse/skills",    # XDG style
         "~/codefuse/skills"             # Another possibility

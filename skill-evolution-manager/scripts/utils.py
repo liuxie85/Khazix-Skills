@@ -10,6 +10,7 @@ def get_default_skills_dir():
     # Priority 2: Check known paths
     candidates = [
         "~/.config/opencode/skills",
+        "~/.codefuse/fuse/skills",
         "~/.codefuse/skills",
         "~/.config/codefuse/skills",
         "~/codefuse/skills"
