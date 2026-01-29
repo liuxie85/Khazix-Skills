@@ -8,9 +8,9 @@ import urllib.error
 import yaml
 # Ensure we can import from the same directory
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from scan_and_check import scan_skills, check_updates, parse_github_url
+from scan_and_check import scan_skills, check_updates, parse_github_url, get_default_skills_dir
 
-DEFAULT_SKILLS_DIR = os.path.expanduser("~/.config/opencode/skills")
+DEFAULT_SKILLS_DIR = get_default_skills_dir()
 
 def get_file_content(github_info, file_path):
     """Fetch file content from GitHub API"""

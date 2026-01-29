@@ -13,8 +13,14 @@ import sys
 import shutil
 import json
 
-# 默认 skills 路径（跨平台）
-DEFAULT_SKILLS_DIR = os.path.expanduser("~/.config/opencode/skills")
+# Ensure we can import from the same directory
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+try:
+    from scan_and_check import get_default_skills_dir
+    DEFAULT_SKILLS_DIR = get_default_skills_dir()
+except ImportError:
+    # Fallback if scan_and_check is missing (standalone usage)
+    DEFAULT_SKILLS_DIR = os.path.expanduser("~/.config/opencode/skills")
 
 
 def delete_skill(skills_root, skill_name, confirm=True):

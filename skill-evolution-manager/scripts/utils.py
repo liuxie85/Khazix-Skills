@@ -1,8 +1,30 @@
 import os
 import sys
 
+def get_default_skills_dir():
+    # Priority 1: Environment variable
+    env_path = os.getenv("SKILLS_DIR")
+    if env_path:
+        return os.path.expanduser(env_path)
+    
+    # Priority 2: Check known paths
+    candidates = [
+        "~/.config/opencode/skills",
+        "~/.codefuse/skills",
+        "~/.config/codefuse/skills",
+        "~/codefuse/skills"
+    ]
+    
+    for path in candidates:
+        expanded = os.path.expanduser(path)
+        if os.path.exists(expanded):
+            return expanded
+            
+    # Default fallback
+    return os.path.expanduser("~/.config/opencode/skills")
+
 # 默认 Skills 根目录
-DEFAULT_SKILLS_ROOT = os.path.expanduser("~/.config/opencode/skills")
+DEFAULT_SKILLS_ROOT = get_default_skills_dir()
 
 def resolve_skill_path(skill_identifier):
     """

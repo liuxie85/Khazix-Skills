@@ -5,7 +5,7 @@ scan_and_check.py - 扫描 skills 目录并检查 GitHub 更新
 Usage:
     python scan_and_check.py [skills_dir]
 
-默认路径: ~/.config/opencode/skills
+默认路径: 自动检测 (e.g. ~/.config/opencode/skills, ~/.codefuse/skills) 或使用 SKILLS_DIR 环境变量
 """
 
 import os
@@ -20,7 +20,29 @@ import hashlib
 from datetime import datetime
 
 # 默认 skills 路径（跨平台）
-DEFAULT_SKILLS_DIR = os.path.expanduser("~/.config/opencode/skills")
+def get_default_skills_dir():
+    # Priority 1: Environment variable
+    env_path = os.getenv("SKILLS_DIR")
+    if env_path:
+        return os.path.expanduser(env_path)
+    
+    # Priority 2: Check known paths
+    candidates = [
+        "~/.config/opencode/skills",
+        "~/.codefuse/skills",           # Common alias
+        "~/.config/codefuse/skills",    # XDG style
+        "~/codefuse/skills"             # Another possibility
+    ]
+    
+    for path in candidates:
+        expanded = os.path.expanduser(path)
+        if os.path.exists(expanded):
+            return expanded
+            
+    # Default fallback to opencode path if nothing exists
+    return os.path.expanduser("~/.config/opencode/skills")
+
+DEFAULT_SKILLS_DIR = get_default_skills_dir()
 
 
 
