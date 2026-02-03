@@ -8,7 +8,7 @@ import urllib.error
 import yaml
 # Ensure we can import from the same directory
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from scan_and_check import scan_skills, check_updates, parse_github_url, get_default_skills_dir
+from scan_and_check import scan_skills, check_updates, parse_github_url, get_default_skills_dir, get_latest_commit_sha
 
 DEFAULT_SKILLS_DIR = get_default_skills_dir()
 
@@ -109,6 +109,55 @@ def update_skill_files(skill, updates_needed):
             
     return success_count, fail_count
 
+def update_skill_metadata(skill):
+    """Update SKILL.md with the latest commit hash"""
+    github_info = parse_github_url(skill['github_url'])
+    if not github_info:
+        return False
+        
+    latest_sha = get_latest_commit_sha(github_info['owner'], github_info['repo'], github_info['branch'])
+    if not latest_sha:
+        print("Warning: Could not fetch latest commit SHA to update SKILL.md", file=sys.stderr)
+        return False
+        
+    skill_md_path = os.path.join(skill['dir'], 'SKILL.md')
+    if not os.path.exists(skill_md_path):
+        return False
+        
+    try:
+        with open(skill_md_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        parts = content.split('---')
+        if len(parts) >= 3:
+            # Reconstruct frontmatter
+            frontmatter_raw = parts[1]
+            try:
+                # We use simple string manipulation to avoid reformatting strict YAML if possible,
+                # but parsing is safer to ensure valid YAML.
+                # However, to preserve comments/order, maybe regex replacement is better?
+                # Standard YAML dump might reorder keys.
+                # Let's try to append or replace github_hash line.
+                
+                import re
+                if 'github_hash:' in frontmatter_raw:
+                    new_frontmatter = re.sub(r'github_hash:.*', f'github_hash: {latest_sha}', frontmatter_raw)
+                else:
+                    new_frontmatter = frontmatter_raw + f'\ngithub_hash: {latest_sha}'
+                
+                new_content = '---' + new_frontmatter + '---' + '---'.join(parts[2:])
+                
+                with open(skill_md_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                return True
+            except Exception as e:
+                print(f"Error parsing frontmatter: {e}", file=sys.stderr)
+                return False
+    except Exception as e:
+        print(f"Error updating metadata: {e}", file=sys.stderr)
+        return False
+    return False
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({"error": "Usage: update_skill.py <skill_name> [skills_dir]"}))
@@ -168,6 +217,11 @@ def main():
     # 4. Update
     print(f"Updating {len(files_to_update)} files...", file=sys.stderr)
     success, fail = update_skill_files(skill, files_to_update)
+    
+    # 5. Update Metadata (github_hash)
+    if success > 0:
+        print("Updating skill metadata...", file=sys.stderr)
+        update_skill_metadata(skill)
     
     result = {
         "status": "updated" if fail == 0 else "partial_update_failed",

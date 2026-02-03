@@ -198,6 +198,29 @@ def fetch_repo_tree(owner, repo, branch):
         raise Exception(f"Network error: {str(e)}")
 
 
+def get_latest_commit_sha(owner, repo, branch):
+    """获取指定分支的最新 commit SHA"""
+    api_url = f"https://api.github.com/repos/{owner}/{repo}/commits/{branch}"
+    headers = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'opencode-skill-manager'
+    }
+    
+    token = os.getenv('GITHUB_TOKEN')
+    if token:
+        headers['Authorization'] = f'token {token}'
+        
+    try:
+        req = urllib.request.Request(api_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode('utf-8'))
+                return data.get('sha')
+            return None
+    except Exception:
+        return None
+
+
 def evaluate_skill_update(skill, tree_data):
     """
     对比本地 skill 文件与远程 tree 数据。
@@ -230,7 +253,7 @@ def evaluate_skill_update(skill, tree_data):
         skill_dir = skill['dir']
         for root, dirs, files in os.walk(skill_dir):
             for file in files:
-                if file == 'SKILL.md' or file.startswith('.'):
+                if file.startswith('.'):
                     continue
                 
                 abs_path = os.path.join(root, file)
